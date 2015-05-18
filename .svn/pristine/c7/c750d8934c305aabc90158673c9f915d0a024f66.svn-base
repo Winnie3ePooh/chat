@@ -1,0 +1,114 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package ru.ifmo.javawebapp;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.sql.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
+/**
+ *
+ * @author anton
+ * @see http://www.h2database.com/html/quickstart.html 
+ */
+public class ContactList {
+    
+    private static final String dbUrl = "jdbc:h2:~/contacts";
+
+    public ContactList() {
+        try {
+            Class.forName("org.h2.Driver");
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(ContactList.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public boolean createDB() {
+        try {
+            Connection conn = DriverManager.
+                    getConnection(dbUrl);
+            
+            Statement st = conn.createStatement();
+            st.execute("create table people(id bigint auto_increment, fio varchar(255), phone varchar(255), email varchar(255))");
+            
+            conn.close();
+            return true;
+        } catch (SQLException ex) {
+            Logger.getLogger(ContactList.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
+
+    public JSONArray get() {
+        try {
+            Connection conn = DriverManager.
+                        getConnection(dbUrl);
+            
+            Statement st = conn.createStatement();
+            ResultSet result = st.executeQuery("SELECT * FROM PEOPLE");
+            
+            JSONArray list = new JSONArray();
+            while (result.next()) {
+                Contact c = new Contact(result.getString("FIO"),
+                        result.getString("PHONE"),
+                        result.getString("EMAIL"));
+                list.add(c);
+            }
+            
+            conn.close();
+            return list;
+        } catch (SQLException ex) {
+            Logger.getLogger(ContactList.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
+        }
+    }
+
+    public boolean add(Contact c) {
+        try {
+            Connection conn = DriverManager.
+                    getConnection(dbUrl);
+            
+            String q = "INSERT INTO PEOPLE(fio, phone, email) VALUES(?,?,?)";
+            PreparedStatement st = conn.prepareStatement(q);
+
+            st.setString(1, c.getFIO());
+            st.setString(2, c.getPhone());
+            st.setString(3, c.getEmail());
+            st.execute();
+            
+            conn.close();
+            return true;
+        } catch (SQLException ex) {
+            Logger.getLogger(ContactList.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
+    
+    public boolean delete(String id) {
+        try {
+            Connection conn = DriverManager.
+                    getConnection(dbUrl);
+
+            String q = "DELETE FROM PEOPLE WHERE ID = ?";
+            PreparedStatement st = conn.prepareStatement(q);
+
+            st.setString(1, id);
+            st.execute();
+            
+            conn.close();
+            return true;
+        } catch (SQLException ex) {
+            Logger.getLogger(ContactList.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
+    }
+    
+
+    
+}
